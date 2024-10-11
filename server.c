@@ -5,9 +5,34 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <pthread.h>
+#include <unistd.h>
  
 #define PORT 23		//端口号
 #define BACKLOG 5	//最大监听数
+#define BUF_SIZE 4096   //
+
+// Function to handle client connections
+void* handle_client(void* arg) {
+    int new_fd = *(int*)arg; // Get the client socket descriptor
+    char buf[BUF_SIZE] = {0}; // Buffer for receiving data
+    int iRecvLen;
+
+    // Send a welcome message to the client
+    send(new_fd, "这是服务器接收成功后发回的信息!", sizeof("这是服务器接收成功后发回的信息!"), 0);
+
+    // Receive data from the client
+    iRecvLen = recv(new_fd, buf, sizeof(buf), 0);
+    if (iRecvLen <= 0) { // Check for errors or if the client has closed the connection
+        printf("接收失败或者对端关闭连接！\n");
+    } else {
+        printf("Received from client: %s\n", buf);
+    }
+
+    // Close the client socket
+    close(new_fd);
+    return NULL;
+}
  
 int main()
 {
@@ -17,7 +42,7 @@ int main()
 	char buf[4096] = {0}; //
 	struct sockaddr_in stLocalAddr = {0}; //本地地址信息结构图，下面有具体的属性赋值
 	struct sockaddr_in stRemoteAddr = {0}; //对方地址信息
-	socklen_t socklen = 0;  	
+	socklen_t socklen = sizeof(stRemoteAddr);  	
  
 	iSocketFD = socket(AF_INET, SOCK_STREAM, 0); //建立socket
 	if(0 > iSocketFD)
